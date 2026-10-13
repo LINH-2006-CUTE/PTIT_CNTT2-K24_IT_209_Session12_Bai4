@@ -89,7 +89,20 @@ jobs:
 
             docker image prune -f
 
-            sleep 5
-            curl --fail http://127.0.0.1:8080/actuator/health
+            
+for i in $(seq 1 30); do
+  if curl --fail --silent http://127.0.0.1:8080/actuator/health; then
+    echo "Health check passed"
+    break
+  fi
 
-            docker logout ghcr.io
+  if [ "$i" -eq 30 ]; then
+    echo "Health check failed after 30 attempts"
+    docker logs --tail 100 deploy-demo
+    exit 1
+  fi
+
+  sleep 2
+done
+
+docker logout ghcr.io
